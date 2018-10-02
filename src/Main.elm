@@ -17,7 +17,12 @@ main =
 
 type alias Model =
     { timeline : Timeline
-    , username : String
+    , inputForm : InputForm
+    }
+
+
+type alias InputForm =
+    { username : String
     , message : String
     }
 
@@ -37,11 +42,17 @@ emptyTimeline =
     []
 
 
+emptyInputForm : InputForm
+emptyInputForm =
+    { username = ""
+    , message = ""
+    }
+
+
 init : Model
 init =
     { timeline = emptyTimeline
-    , username = ""
-    , message = ""
+    , inputForm = emptyInputForm
     }
 
 
@@ -59,49 +70,53 @@ update msg model =
             model
 
         UpdateUsername username ->
-            { model | username = username }
+            { model | inputForm = { username = username, message = model.inputForm.message } }
 
         UpdateMessage message ->
-            { model | message = message }
+            { model | inputForm = { message = message, username = model.inputForm.username } }
 
         AddTweet tweet ->
-            { model | timeline = tweet :: model.timeline, message = "" }
+            { model | timeline = tweet :: model.timeline, inputForm = { username = model.inputForm.username, message = "" } }
 
 
 view : Model -> Html Msg
 view model =
     div []
-        [ viewUsernameInput model.username
-        , viewMessageInput model.message
+        [ viewInputForm model.inputForm
         , viewTweetButton model
         , viewTimeline model.timeline
         ]
 
 
-viewUsernameInput : String -> Html Msg
-viewUsernameInput username =
-    div []
-        [ text "Username: "
-        , input [ value username, onInput UpdateUsername ] []
+viewInputForm : InputForm -> Html Msg
+viewInputForm inputForm =
+    ul []
+        [ li []
+            [ text "Username: "
+            , input [ value inputForm.username, onInput UpdateUsername ] []
+            ]
+        , li []
+            [ text "Message: "
+            , input [ value inputForm.message, onInput UpdateMessage ] []
+            ]
         ]
 
 
-viewMessageInput : String -> Html Msg
-viewMessageInput message =
-    div []
-        [ text "Message: "
-        , input [ value message, onInput UpdateMessage ] []
-        ]
+isEmptyInputForm : InputForm -> Bool
+isEmptyInputForm inputForm =
+    String.isEmpty inputForm.username || String.isEmpty inputForm.message
 
 
 viewTweetButton : Model -> Html Msg
 viewTweetButton model =
     let
         tweet =
-            { username = model.username, message = model.message }
+            { username = model.inputForm.username
+            , message = model.inputForm.message
+            }
 
         tweetDisabled =
-            String.isEmpty model.username || String.isEmpty model.message
+            isEmptyInputForm model.inputForm
     in
     div []
         [ input [ type_ "button", value "Tweet!", disabled tweetDisabled, onClick <| AddTweet tweet ] []
